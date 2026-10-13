@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Proportions pas à pas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#fbfdff;--ink:#1b2b5a;--soft:#52608a;--line:#d6e2f5;--hi:#ffe66d;--ok:#136f47;--okbg:#dff5e9;--no:#9a3412;--nobg:#ffe9d6;--acc:#3d5afe;--accfg:#fff;--cell:#e9f0fb;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#0f1630;--ink:#e8eeff;--soft:#a6b3dc;--line:#26346a;--hi:#6b5d00;--ok:#7be0ae;--okbg:#103a2a;--no:#ffb98a;--nobg:#4a2410;--acc:#7f93ff;--accfg:#0f1630;--cell:#1b2750;color-scheme:dark}}
+:root[data-theme="dark"]{--paper:#0f1630;--ink:#e8eeff;--soft:#a6b3dc;--line:#26346a;--hi:#6b5d00;--ok:#7be0ae;--okbg:#103a2a;--no:#ffb98a;--nobg:#4a2410;--acc:#7f93ff;--accfg:#0f1630;--cell:#1b2750;color-scheme:dark}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;min-height:100%;font:400 18px/1.55 Lexend,system-ui,sans-serif;color:var(--ink);background-color:var(--paper);background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:28px 28px}
+main{max-width:720px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:2rem;font-weight:800;margin:0 0 4px;line-height:1.15}
+h2{font-size:1.25rem;font-weight:800;margin:0 0 8px}
+.sub{color:var(--soft);margin:0 0 16px}
+nav{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+nav button{font:600 1rem Lexend,sans-serif;padding:8px 14px;border:2px solid var(--ink);background:var(--paper);color:var(--ink);border-radius:10px;cursor:pointer}
+nav button[aria-current=true]{background:var(--ink);color:var(--paper)}
+nav button.done::after{content:" ✓";color:var(--ok)}
+nav button[aria-current=true].done::after{color:var(--hi)}
+.bar{height:12px;border:2px solid var(--ink);border-radius:8px;background:var(--paper);overflow:hidden;margin:0 0 4px}
+.bar i{display:block;height:100%;background:var(--acc);transition:width .4s}
+.card{background:var(--paper);border:2px solid var(--ink);border-radius:14px;padding:18px;margin-top:16px}
+mark{background:var(--hi);color:inherit;padding:0 3px;border-radius:3px}
+.costumes{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:1.3rem;font-weight:800;margin:10px 0}
+.costumes span{background:var(--hi);padding:4px 12px;border-radius:8px}
+.costumes b{color:var(--soft)}
+#grid{display:grid;grid-template-columns:repeat(10,1fr);gap:3px;max-width:340px;margin:12px 0}
+#grid button{aspect-ratio:1;border:0;border-radius:4px;background:var(--cell);cursor:pointer;padding:0}
+#grid button.on{background:var(--acc)}
+input[type=range]{width:100%;accent-color:var(--acc)}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+input[type=text]{font:600 1.2rem Lexend,sans-serif;padding:10px 12px;border:2px solid var(--ink);border-radius:10px;background:var(--paper);color:var(--ink);width:min(100%,260px)}
+.btn{font:600 1rem Lexend,sans-serif;padding:10px 16px;border:2px solid var(--ink);border-radius:10px;background:var(--paper);color:var(--ink);cursor:pointer}
+.btn.main{background:var(--acc);border-color:var(--acc);color:var(--accfg)}
+.btn:focus-visible,input:focus-visible,nav button:focus-visible,#grid button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.fb{margin-top:12px;padding:12px 14px;border-radius:10px;font-weight:600}
+.fb.ok{background:var(--okbg);color:var(--ok)}
+.fb.no{background:var(--nobg);color:var(--no)}
+.hint{margin-top:10px;padding:10px 14px;border-left:6px solid var(--hi);background:var(--cell);border-radius:6px}
+.hint small{display:block;color:var(--soft)}
+.ctx{color:var(--soft);margin:0 0 10px}
+.badge{font-weight:800;font-size:1.1rem;background:var(--hi);display:inline-block;padding:6px 14px;border-radius:999px;margin-top:10px}
+.help{font-size:.9rem;color:var(--soft);margin-top:6px}
+</style>
+</head>
+<body>
+<main>
+<h1>Les proportions, pas à pas</h1>
+<p class="sub">Pas de chrono, pas de note. Tu peux recommencer autant que tu veux.</p>
+<nav id="nav" aria-label="Parties du site"></nav>
+<div class="bar" aria-hidden="true"><i id="pb" style="width:0"></i></div>
+<div class="help" id="pt"></div>
+<div id="app"></div>
+</main>
+<script>
+const fr=(x,m=3)=>x.toLocaleString('fr-FR',{maximumFractionDigits:m});
+const gcd=(a,b)=>b?gcd(b,a%b):a;
+const near=(a,b,t=1e-6)=>Math.abs(a-b)<t;
+function costumes(n,d){const g=gcd(n,d),s=(n/g)+'/'+(d/g);const f=(n+'/'+d);
+ const parts=[f];if(s!==f)parts.push(s);parts.push(fr(n/d));parts.push(fr(n/d*100)+' %');
+ return '<div class="costumes">'+parts.map((p,i)=>(i?'<b>=</b>':'')+'<span>'+p+'</span>').join('')+'</div>'}
+const W=[['Tomate',3,6,'o, a, e'],['Brocolis',3,8,'o, o, i'],['Radis',2,5,'a, i'],['Eau',3,3,'e, a, u']];
+const EX=[
+{n:'Les voyelles',badge:'Détective des lettres',ctx:'Une proportion, c\'est <mark>ce qu\'on cherche ÷ le total</mark>. Réponds comme tu veux : fraction (3/6), décimal (0,5) ou pourcentage (50 %).',
+ qs:W.map(([w,v,t,l])=>({p:'Quelle est la proportion de voyelles dans « <b>'+w+'</b> » ?',ans:v/t,k:'r',f:[v,t],
+  h:['Compte <mark>toutes</mark> les lettres de « '+w+' ». Combien y en a-t-il ?','Divise le nombre de voyelles (a, e, i, o, u, y) par le nombre total de lettres.',w+' : '+t+' lettres, dont '+v+' voyelles ('+l+'). Écris la fraction '+v+'/'+t+', puis calcule '+v+' ÷ '+t+'.'],
+  d:x=>t-v>0&&near(x,v/(t-v))?'Attention ! En bas de la fraction, il faut mettre TOUTES les lettres, pas seulement les consonnes.':null}))},
+{n:'La montre connectée',badge:'Maître des fractions',ctx:'Dans un groupe de <mark>40</mark> personnes, <mark>15</mark> ont une montre connectée.',
+ qs:[{p:'Quelle est la proportion de personnes qui ont une montre connectée ?',ans:3/8,k:'r',f:[15,40],
+  h:['Quel est le total ? Le groupe entier, pas seulement ceux qui n\'ont pas de montre.','Divise ceux qui ont une montre par le total du groupe.','Écris 15/40, puis calcule 15 ÷ 40 sur la calculatrice.'],
+  d:x=>near(x,15/25)?'Tu as divisé par 25. En bas de la fraction, il faut le groupe entier : 40.':null}]},
+{n:'Grands et petits pays',badge:'Balance des géants',ctx:'En Suède, <mark>28 %</mark> des habitants mesurent plus de 1,80 m. En France : <mark>9 %</mark>. La Suède compte <mark>10,6 millions</mark> d\'habitants, la France <mark>68,5 millions</mark>.',
+ qs:[{p:'Combien d\'habitants de plus de 1,80 m en <b>Suède</b> ? (en millions)',ans:2.968,k:'n',tol:.01,
+  h:['28 % de 10,6, c\'est 28/100 de 10,6.','Calcule 10,6 × 28 ÷ 100.','Tape 10,6 × 0,28 sur la calculatrice.'],d:x=>near(x,28)||near(x,.28)?'28 % est une proportion. Il faut l\'appliquer à 10,6 millions.':null},
+ {p:'Combien d\'habitants de plus de 1,80 m en <b>France</b> ? (en millions)',ans:6.165,k:'n',tol:.01,
+  h:['9 % de 68,5, c\'est 9/100 de 68,5.','Calcule 68,5 × 9 ÷ 100.','Tape 68,5 × 0,09 sur la calculatrice.'],d:x=>near(x,9)?'9 % est une proportion. Il faut l\'appliquer à 68,5 millions.':null},
+ {p:'Quel pays compte le plus d\'habitants de plus de 1,80 m ?',k:'c',opts:['France','Suède'],ans:0,
+  h:['Compare les deux résultats que tu viens de trouver.','Le plus grand nombre de personnes gagne, pas le plus grand pourcentage.','Compare 6,165 millions et 2,968 millions.'],
+  no:'Attention au piège ! 28 % > 9 %, mais ce ne sont pas les mêmes totaux. Compare les nombres de personnes.',
+  okm:'Oui. Un petit pourcentage d\'un très grand pays peut valoir plus qu\'un gros pourcentage d\'un petit pays.'}]},
+{n:'La playlist de Laurie',badge:'Roi de la découpe',ctx:'Laurie a <mark>250</mark> morceaux. Le rap en représente les <mark>3/5</mark>. Parmi les autres, il y a <mark>1/4</mark> de R&B ; le reste, c\'est de la K-pop.',
+ qs:[{p:'Combien de morceaux de rap ?',ans:150,k:'n',
+  h:['Pour 3/5 de 250, on coupe 250 en 5 parts égales.','Calcule 250 ÷ 5 : c\'est la valeur d\'une part. Puis prends-en 3.','(250 ÷ 5) × 3'],
+  d:x=>near(x,50)?'250 ÷ 5 donne 1 part (un cinquième). Il en faut 3 : multiplie par 3.':near(x,750)?'Tu as multiplié par 3 mais tu as oublié de diviser par 5.':null},
+ {p:'Combien de morceaux ne sont pas du rap ?',ans:100,k:'n',h:['« Les autres titres » = le total moins le rap.','250 − 150','Tu as 250 titres, dont 150 de rap. 250 − 150 = ?'],d:null},
+ {p:'Combien de morceaux de R&B ? (un quart des <b>autres</b> titres)',ans:25,k:'n',
+  h:['Un quart de quoi ? Des autres titres, ceux qui ne sont pas du rap.','Un quart = on coupe en 4. Coupe le bon nombre.','100 ÷ 4'],
+  d:x=>near(x,62.5)?'Un quart des AUTRES titres, pas des 250 ! Pars du nombre de titres qui restent.':null},
+ {p:'Combien de morceaux de K-pop ?',ans:75,k:'n',h:['Le reste = les autres titres moins le R&B.','100 − 25','Les autres titres : 100. Le R&B : 25.'],d:null}]},
+{n:'Le sucre de Medhi',badge:'Expert du goûter',ctx:'Medhi boit un soda avec <mark>35 g</mark> de sucre et mange <mark>150 g</mark> de gâteau contenant <mark>26 %</mark> de sucre. Maximum conseillé : <mark>75 g</mark> par jour.',
+ qs:[{p:'Combien de grammes de sucre dans le gâteau ?',ans:39,k:'n',
+  h:['26 % de 150 g, c\'est 26/100 de 150.','150 × 26 ÷ 100','Tape 150 × 0,26 sur la calculatrice.'],d:x=>near(x,26)?'26 % est une proportion, pas des grammes. Applique-la à 150 g.':null},
+ {p:'Combien de grammes de sucre au total (soda + gâteau) ?',ans:74,k:'n',h:['Il y a deux sources de sucre.','Additionne le soda et le gâteau.','35 + 39'],d:x=>near(x,39)?'Tu as oublié le soda : 35 g.':null},
+ {p:'Quelle proportion de la limite de 75 g Medhi a-t-il mangée ? (en %, arrondi à 1 %)',ans:99,k:'p',
+  h:['Proportion = ce qu\'il a mangé ÷ la limite.','Divise le sucre total de Medhi par 75, puis multiplie par 100.','74 ÷ 75 × 100, puis arrondis à l\'unité.'],
+  d:x=>near(x,98.67,.05)?'Ton calcul est bon. Arrondis maintenant à l\'unité (1 %).':near(x,74)?'74, ce sont des grammes. Pour la proportion : divise par 75.':near(x,.99,.01)||near(x,.9867,.01)?'Pour un pourcentage, multiplie par 100.':null}]}
+];
+let tab='lab',qi=0,hs=0,solved={},n=37,last='';
+const total=EX.reduce((s,e)=>s+e.qs.length,0);
+const $=id=>document.getElementById(id);
+function exDone(i){return EX[i].qs.every((_,j)=>solved[i+'-'+j])}
+function nav(){$('nav').innerHTML='<button data-t="lab" '+(tab==='lab'?'aria-current="true"':'')+'>Labo</button>'+EX.map((e,i)=>'<button data-t="'+i+'" class="'+(exDone(i)?'done':'')+'" '+(tab==i?'aria-current="true"':'')+'>Exo '+(i+1)+'</button>').join('');
+ $('nav').querySelectorAll('button').forEach(b=>b.onclick=()=>{tab=b.dataset.t==='lab'?'lab':+b.dataset.t;qi=0;hs=0;last='';render()});
+ const c=Object.keys(solved).length;$('pb').style.width=c/total*100+'%';$('pt').textContent=c+' question'+(c>1?'s':'')+' réussie'+(c>1?'s':'')+' sur '+total}
+function render(){nav();tab==='lab'?lab():qn()}
+function lab(){$('app').innerHTML='<section class="card"><h2>Le labo : une même quantité, trois écritures</h2><p class="sub">Clique sur la grille ou bouge le curseur. Chaque case vaut 1 sur 100.</p><div id="grid" role="group" aria-label="Grille de 100 cases"></div><label for="sl">Nombre de cases coloriées : <b id="nv"></b></label><input id="sl" type="range" min="0" max="100" value="'+n+'"><div id="co" aria-live="polite"></div></section>';
+ const g=$('grid');for(let i=0;i<100;i++){const b=document.createElement('button');b.setAttribute('aria-label','case '+(i+1));b.onclick=()=>{n=(n===i+1)?i:i+1;$('sl').value=n;upd()};g.appendChild(b)}
+ $('sl').oninput=e=>{n=+e.target.value;upd()};upd()}
+function upd(){[...$('grid').children].forEach((b,i)=>b.className=i<n?'on':'');$('nv').textContent=n;$('co').innerHTML=n?costumes(n,100):'<p class="sub">Colorie des cases pour voir apparaître la fraction, le décimal et le pourcentage.</p>'}
+function parse(s,k){let t=s.trim().replace(/\s|\u00a0/g,'').replace(',','.');const pct=t.includes('%');t=t.replace('%','');let v;
+ if(t.includes('/')){const [a,b]=t.split('/').map(Number);v=b?a/b:NaN}else v=t===''?NaN:Number(t);
+ if(k==='r'&&pct)v/=100;return v}
+function qn(){const e=EX[tab],q=e.qs[qi],key=tab+'-'+qi,ok=solved[key];
+ let h='<section class="card"><h2>Exercice '+(+tab+1)+' · '+e.n+'</h2><p class="ctx">'+e.ctx+'</p><p><b>Question '+(qi+1)+'/'+e.qs.length+'.</b> '+q.p+'</p>';
+ if(q.k==='c')h+='<div class="row">'+q.opts.map((o,i)=>'<button class="btn" data-o="'+i+'" '+(ok?'disabled':'')+'>'+o+'</button>').join('')+'</div>';
+ else h+='<div class="row"><input type="text" id="in" inputmode="text" autocomplete="off" aria-label="Ta réponse" '+(ok?'disabled':'')+'><button class="btn main" id="chk" '+(ok?'disabled':'')+'>Vérifier</button></div>'+(q.k==='r'?'<div class="help">Tu peux écrire 3/8, 0,375 ou 37,5 %.</div>':'');
+ h+='<div class="row"><button class="btn" id="hb" '+(ok||hs>=3?'disabled':'')+'>Un indice ? ('+hs+'/3)</button></div><div id="hn"></div><div id="fb" aria-live="polite"></div></section>';
+ $('app').innerHTML=h;
+ for(let i=0;i<hs;i++)addHint(i);
+ if(ok)win(q);else if(last)say(last,'no');
+ $('hb').onclick=()=>{addHint(hs);hs++;if(hs>=3)$('hb').disabled=true;$('hb').textContent='Un indice ? ('+hs+'/3)'};
+ if(q.k==='c')document.querySelectorAll('[data-o]').forEach(b=>b.onclick=()=>{if(+b.dataset.o===q.ans)good(q);else{last=q.no;say(last,'no')}});
+ else{const go=()=>{const v=parse($('in').value,q.k);if(isNaN(v)){last='Écris un nombre, une fraction (3/8) ou un pourcentage (37,5 %).';return say(last,'no')}
+  const good_=q.k==='p'?v===q.ans:near(v,q.ans,q.tol||1e-6);
+  if(good_)return good(q);
+  last=(q.d&&q.d(v))||(q.k==='r'&&v>1?'Une proportion d\'une partie dans un tout ne dépasse pas 1 (100 %). Vérifie le total.':'Pas tout à fait. Relis la question, ou demande un indice.');say(last,'no')};
+  $('chk').onclick=go;$('in').onkeydown=ev=>{if(ev.key==='Enter')go()};$('in').focus()}}
+function addHint(i){const q=EX[tab].qs[qi],d=document.createElement('div');d.className='hint';d.innerHTML='<small>Indice '+(i+1)+'</small>'+q.h[i];$('hn').appendChild(d)}
+function say(m,c){$('fb').innerHTML='<div class="fb '+c+'">'+m+'</div>'}
+function good(q){solved[tab+'-'+qi]=1;last='';hs=hs;render()}
+function win(q){const e=EX[tab],lastQ=qi===e.qs.length-1;let m=q.okm||'Bravo, c\'est juste !';
+ let h='<div class="fb ok">'+m+'</div>'+(q.f?costumes(q.f[0],q.f[1]):'');
+ if(lastQ&&exDone(tab))h+='<div class="badge">Badge débloqué : '+e.badge+'</div>';
+ h+='<div class="row">'+(lastQ?(tab<EX.length-1?'<button class="btn main" id="nx">Exercice suivant</button>':'<button class="btn main" id="nx">Retour au labo</button>'):'<button class="btn main" id="nx">Question suivante</button>')+'<button class="btn" id="rt">Refaire</button></div>';
+ $('fb').innerHTML=h;
+ $('nx').onclick=()=>{hs=0;last='';if(lastQ){tab=tab<EX.length-1?tab+1:'lab';qi=0}else qi++;render()};
+ $('rt').onclick=()=>{delete solved[tab+'-'+qi];hs=0;render()}}
+render();
+</script>
+</body>
+</html>
